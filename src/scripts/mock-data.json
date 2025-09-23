@@ -1,0 +1,88 @@
+{
+  "locations": [
+    {
+      "id": "almazar",
+      "name": "Алмазар",
+      "address": "г. Ташкент, район Алмазар",
+      "items": [
+        { "id": "item-1", "name": "Товар А", "quantity": 150, "unit": "шт" },
+        { "id": "item-2", "name": "Товар B", "quantity": 75, "unit": "шт" },
+        { "id": "item-3", "name": "Товар C", "quantity": 200, "unit": "кг" },
+        { "id": "item-4", "name": "Товар D", "quantity": 50, "unit": "л" }
+      ]
+    },
+    {
+      "id": "gvardeyskiy",
+      "name": "Гвардейский",
+      "address": "г. Ташкент, район Гвардейский",
+      "items": [
+        { "id": "item-1", "name": "Товар А", "quantity": 80, "unit": "шт" },
+        { "id": "item-2", "name": "Товар B", "quantity": 120, "unit": "шт" },
+        { "id": "item-3", "name": "Товар C", "quantity": 90, "unit": "кг" },
+        { "id": "item-5", "name": "Товар E", "quantity": 30, "unit": "м" }
+      ]
+    },
+    {
+      "id": "yunusabad",
+      "name": "Юнусабад",
+      "address": "г. Ташкент, район Юнусабад",
+      "items": [
+        { "id": "item-1", "name": "Товар А", "quantity": 95, "unit": "шт" },
+        { "id": "item-3", "name": "Товар C", "quantity": 180, "unit": "кг" },
+        { "id": "item-4", "name": "Товар D", "quantity": 65, "unit": "л" },
+        { "id": "item-6", "name": "Товар F", "quantity": 40, "unit": "шт" }
+      ]
+    },
+    {
+      "id": "sergeli",
+      "name": "Сергели",
+      "address": "г. Ташкент, район Сергели",
+      "items": [
+        { "id": "item-2", "name": "Товар B", "quantity": 110, "unit": "шт" },
+        { "id": "item-4", "name": "Товар D", "quantity": 85, "unit": "л" },
+        { "id": "item-5", "name": "Товар E", "quantity": 25, "unit": "м" },
+        { "id": "item-7", "name": "Товар G", "quantity": 60, "unit": "кг" }
+      ]
+    }
+  ],
+  "transfers": [
+    {
+      "id": "transfer-1",
+      "fromLocation": "almazar",
+      "toLocation": "gvardeyskiy",
+      "items": [{ "itemId": "item-1", "quantity": 20 }, { "itemId": "item-2", "quantity": 15 }],
+      "status": "completed",
+      "createdBy": "admin",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "completedAt": "2024-01-15T11:15:00Z"
+    },
+    {
+      "id": "transfer-2",
+      "fromLocation": "yunusabad",
+      "toLocation": "sergeli",
+      "items": [{ "itemId": "item-3", "quantity": 50 }],
+      "status": "pending",
+      "createdBy": "admin",
+      "createdAt": "2024-01-16T14:20:00Z"
+    },
+    {
+      "id": "transfer-3",
+      "fromLocation": "gvardeyskiy",
+      "toLocation": "almazar",
+      "items": [{ "itemId": "item-2", "quantity": 25 }, { "itemId": "item-3", "quantity": 30 }],
+      "status": "failed",
+      "createdBy": "admin",
+      "createdAt": "2024-01-14T09:45:00Z",
+      "error": "Недостаточно товара на складе"
+    }
+  ],
+  "users": [
+    {
+      "id": "admin",
+      "username": "admin",
+      "password": "admin123",
+      "role": "administrator",
+      "name": "Администратор"
+    }
+  ]
+}
