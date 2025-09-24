@@ -198,7 +198,6 @@ export default function AddObjectsPage() {
                       <Input
                         id="item-quantity"
                         type="number"
-                        min="1"
                         placeholder="0"
                         value={itemForm.quantity}
                         onChange={(e) =>

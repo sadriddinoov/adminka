@@ -1,5 +1,6 @@
 "use client"
 
+import { tokenName } from "../config/api"
 import { mockAPI, type User } from "./mock-api"
 
 export interface AuthState {
@@ -91,6 +92,7 @@ class AuthService {
   logout() {
     localStorage.removeItem("isAuthenticated")
     localStorage.removeItem("userData")
+    localStorage.removeItem(tokenName)
 
     this.setState({
       user: null,

@@ -1,13 +1,13 @@
 import { useEffect } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
-import { useAuth } from "../../hooks/use-auth"
+import { tokenName } from "../../config/api"
 
 type AuthGuardProps = {
   children: React.ReactNode
 }
 
 export function AuthGuard({ children }: AuthGuardProps) {
-  const { user } = useAuth()
+  const user = localStorage.getItem(tokenName)
   const navigate = useNavigate()
   const location = useLocation()
 

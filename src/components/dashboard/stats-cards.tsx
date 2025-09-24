@@ -1,50 +1,82 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Building2, Package, ArrowLeftRight, AlertTriangle } from "lucide-react"
-import type { Location, Transfer } from "@/src/lib/mock-api"
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Building2, Package, ArrowLeftRight } from "lucide-react";
+import { API_URL } from "../../config";
 
-interface StatsCardsProps {
-  locations: Location[]
-  transfers: Transfer[]
+interface StatsApiResponse {
+  time: string;
+  total_locations: number;
+  total_devices: number;
+  total_transfers: number;
+  per_object: {
+    object_id: number;
+    object_name: string;
+    devices_count: number;
+  }[];
 }
 
-export function StatsCards({ locations, transfers }: StatsCardsProps) {
-  const totalItems = locations.reduce((sum, location) => sum + location.items.length, 0)
-  const totalQuantity = locations.reduce(
-    (sum, location) => sum + location.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-    0,
-  )
-  const pendingTransfers = transfers.filter((t) => t.status === "pending").length
-  const failedTransfers = transfers.filter((t) => t.status === "failed").length
+async function fetchStats() {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_URL}/api/stats`, {
+    headers: {
+      "Content-Type": "application/json",
+      "Connection": "keep-alive",
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+    method: "GET",
+  });
+
+  if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`);
+  return res.json();
+}
+
+export function StatsCards() {
+  const { data, isLoading } = useQuery<StatsApiResponse>({
+    queryKey: ["stats"],
+    queryFn: fetchStats
+  });
+
+  console.log(data)
 
   const stats = [
     {
       title: "Всего локаций",
-      value: locations.length,
+      value: data?.total_locations ?? 0,
       icon: Building2,
-      description: "Активных складов",
     },
     {
-      title: "Товарных позиций",
-      value: totalItems,
+      title: "Товары",
+      value: data?.total_devices ?? 0,
       icon: Package,
-      description: `Общее количество: ${totalQuantity}`,
     },
     {
-      title: "Активных трансферов",
-      value: pendingTransfers,
+      title: "Трансферы",
+      value: data?.total_transfers ?? 0,
       icon: ArrowLeftRight,
-      description: "Ожидают выполнения",
     },
-    {
-      title: "Неудачных трансферов",
-      value: failedTransfers,
-      icon: AlertTriangle,
-      description: "Требуют внимания",
-      variant: failedTransfers > 0 ? "destructive" : "default",
-    },
-  ]
+  ];
+
+  // Обработка состояния загрузки
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(3)].map((_, index) => (
+          <Card key={index}>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Загрузка...</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">...</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -56,10 +88,9 @@ export function StatsCards({ locations, transfers }: StatsCardsProps) {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{stat.value}</div>
-            <p className="text-xs text-muted-foreground">{stat.description}</p>
           </CardContent>
         </Card>
       ))}
     </div>
-  )
+  );
 }

@@ -1,26 +1,61 @@
-import { useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
-import { cn } from "../../lib/utils"
-import { LayoutDashboard, ArrowLeftRight, History, LogOut, Menu, X, Plus } from "lucide-react"
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { cn } from "../../lib/utils";
+import {
+  LayoutDashboard,
+  ArrowLeftRight,
+  LogOut,
+  Menu,
+  X,
+  Plus,
+} from "lucide-react";
+import { useAuth } from "../../hooks/use-auth";
+import { API_URL } from "../../config";
+import { useQuery } from "@tanstack/react-query";
 
 const navigation = [
   { name: "Панель управления", href: "/dashboard", icon: LayoutDashboard },
   { name: "Трансферы", href: "/transfers", icon: ArrowLeftRight },
-  { name: "История", href: "/history", icon: History },
   { name: "Добавить объекты", href: "/add-objects", icon: Plus },
-]
+];
+
+interface MEApiResponse {
+  username: string;
+  name: string;
+}
+
+async function fetchMe() {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_URL}/api/user`, {
+    headers: {
+      "Content-Type": "application/json",
+      "Connection": "keep-alive",
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+    method: "GET",
+  });
+
+  if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`);
+  return res.json();
+}
 
 export function Sidebar() {
-  const [isOpen, setIsOpen] = useState(false)
-  const location = useLocation()
-  const navigate = useNavigate()
+  const [isOpen, setIsOpen] = useState(false);
+  const location = useLocation();
+  const { logout } = useAuth();
 
-  const user = { name: "Администратор", username: "admin" }
+  const { data } = useQuery<MEApiResponse>({
+    queryKey: ["stats"],
+    queryFn: fetchMe
+  });
+
+  console.log(data)
 
   const handleLogout = () => {
-    console.log("logout")
-    navigate("/login")
-  }
+    logout();
+  };
 
   return (
     <>
@@ -53,7 +88,7 @@ export function Sidebar() {
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6">
             {navigation.map((item) => {
-              const isActive = location.pathname.startsWith(item.href)
+              const isActive = location.pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.name}
@@ -69,7 +104,7 @@ export function Sidebar() {
                   <item.icon className="mr-3 h-5 w-5" />
                   {item.name}
                 </Link>
-              )
+              );
             })}
           </nav>
 
@@ -78,12 +113,14 @@ export function Sidebar() {
             <div className="flex items-center space-x-3 mb-3">
               <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
                 <span className="text-sm font-medium">
-                  {user?.name?.charAt(0) || "А"}
+                  {data?.name?.charAt(0) || "А"}
                 </span>
               </div>
               <div>
-                <p className="text-sm font-medium">{user?.name}</p>
-                <p className="text-xs text-muted-foreground">{user?.username}</p>
+                <p className="text-sm font-medium">{data?.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {data?.username}
+                </p>
               </div>
             </div>
             <button
@@ -105,5 +142,5 @@ export function Sidebar() {
         />
       )}
     </>
-  )
+  );
 }

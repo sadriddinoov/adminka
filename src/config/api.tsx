@@ -27,3 +27,4 @@ export const removeToken = () => {
   localStorage.removeItem(tokenName);
   delete $api.defaults.headers.common.Authorization;
 };
+

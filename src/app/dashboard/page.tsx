@@ -45,7 +45,7 @@ export default function DashboardPage() {
     <AppLayout title="Панель управления" subtitle="Обзор складских операций">
       <div className="space-y-6">
         {/* Stats Cards */}
-        <StatsCards locations={locations} transfers={transfers} />
+        <StatsCards />
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">

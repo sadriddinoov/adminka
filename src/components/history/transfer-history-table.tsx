@@ -1,51 +1,58 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
-import { Badge } from "../ui/badge"
-import { Button } from "../ui/button"
-import { Input } from "../ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
-import { ArrowRight, Eye, Search, Filter, CheckCircle, Clock, XCircle } from "lucide-react"
-import type { Transfer, Location } from "../../lib/mock-api"
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
+import { ArrowRight, Eye, Search, Filter, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { Badge } from "../ui/badge";
 
-interface TransferHistoryTableProps {
-  transfers: Transfer[]
-  locations: Location[]
-  onViewTransfer: (transfer: Transfer) => void
+interface Location {
+  id: string;
+  name: string;
+  object_address: string;
+  created_at: string;
 }
 
-export function TransferHistoryTable({ transfers, locations, onViewTransfer }: TransferHistoryTableProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [sortBy, setSortBy] = useState<string>("date-desc")
+interface Transfer {
+  id: string;
+  object_from: string;
+  object_to: string;
+  devices: string[];
+  device_count: number;
+  created_at: string;
+  status: "pending" | "completed" | "failed";
+  createdBy: string;
+}
 
-  const getLocationName = (id: string) => {
-    return locations.find((l) => l.id === id)?.name || id
-  }
+interface TransferHistoryTableProps {
+  transfers: Transfer[];
+  locations: Location[];
+  onViewTransfer: (transfer: Transfer) => void;
+  currentPage: number;
+  setCurrentPage: (page: number) => void;
+  totalItems: number;
+  itemsPerPage: number;
+}
 
-  const getStatusIcon = (status: Transfer["status"]) => {
-    switch (status) {
-      case "completed":
-        return <CheckCircle className="h-4 w-4 text-green-500" />
-      case "pending":
-        return <Clock className="h-4 w-4 text-yellow-500" />
-      case "failed":
-        return <XCircle className="h-4 w-4 text-red-500" />
-    }
-  }
+export function TransferHistoryTable({
+  transfers,
+  locations,
+  onViewTransfer,
+  currentPage,
+  setCurrentPage,
+  totalItems,
+  itemsPerPage,
+}: TransferHistoryTableProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sortBy, setSortBy] = useState<string>("date-desc");
 
-  const getStatusBadge = (status: Transfer["status"]) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">Завершен</Badge>
-      case "pending":
-        return <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20">Ожидает</Badge>
-      case "failed":
-        return <Badge variant="destructive">Ошибка</Badge>
-    }
-  }
+  const getLocationName = (objectName: string) => {
+    return locations.find((l) => l.name === objectName)?.name || objectName;
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString("ru-RU", {
@@ -54,42 +61,81 @@ export function TransferHistoryTable({ transfers, locations, onViewTransfer }: T
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-    })
-  }
+    });
+  };
+
+  const getStatusBadge = (status: Transfer["status"]) => {
+    switch (status) {
+      case "completed":
+        return (
+          <Badge className="bg-green-500/10 text-green-500 hover:bg-green-500/20">
+            <CheckCircle className="h-3 w-3 mr-1" />
+            Завершен
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20">
+            <Clock className="h-3 w-3 mr-1" />
+            Ожидает
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge variant="destructive">
+            <XCircle className="h-3 w-3 mr-1" />
+            Ошибка
+          </Badge>
+        );
+      default:
+        return <Badge variant="outline">Неизвестно</Badge>;
+    }
+  };
 
   // Filter and sort transfers
   const filteredTransfers = transfers
     .filter((transfer) => {
       const matchesSearch =
         searchQuery === "" ||
-        getLocationName(transfer.fromLocation).toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getLocationName(transfer.toLocation).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getLocationName(transfer.object_from).toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getLocationName(transfer.object_to).toLowerCase().includes(searchQuery.toLowerCase()) ||
         transfer.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        transfer.createdBy.toLowerCase().includes(searchQuery.toLowerCase())
+        transfer.createdBy.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        transfer.devices.some((device) => device.toLowerCase().includes(searchQuery.toLowerCase()));
 
-      const matchesStatus = statusFilter === "all" || transfer.status === statusFilter
+      const matchesStatus = statusFilter === "all" || transfer.status === statusFilter;
 
-      return matchesSearch && matchesStatus
+      return matchesSearch && matchesStatus;
     })
     .sort((a, b) => {
       switch (sortBy) {
         case "date-desc":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
         case "date-asc":
-          return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
         case "status":
-          return a.status.localeCompare(b.status)
+          return a.status.localeCompare(b.status);
         default:
-          return 0
+          return 0;
       }
-    })
+    });
+
+  // Pagination logic
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedTransfers = filteredTransfers.slice(startIndex, endIndex);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>История трансферов</CardTitle>
-
-        {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -99,34 +145,9 @@ export function TransferHistoryTable({ transfers, locations, onViewTransfer }: T
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
             />
-          </div>
-
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48">
-              <Filter className="mr-2 h-4 w-4" />
-              <SelectValue placeholder="Статус" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Все статусы</SelectItem>
-              <SelectItem value="completed">Завершенные</SelectItem>
-              <SelectItem value="pending">Ожидающие</SelectItem>
-              <SelectItem value="failed">Неудачные</SelectItem>
-            </SelectContent>
-          </Select>
-
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Сортировка" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="date-desc">Сначала новые</SelectItem>
-              <SelectItem value="date-asc">Сначала старые</SelectItem>
-              <SelectItem value="status">По статусу</SelectItem>
-            </SelectContent>
-          </Select>
+          </div>  
         </div>
       </CardHeader>
-
       <CardContent>
         <div className="rounded-md border">
           <Table>
@@ -136,51 +157,39 @@ export function TransferHistoryTable({ transfers, locations, onViewTransfer }: T
                 <TableHead>Маршрут</TableHead>
                 <TableHead>Статус</TableHead>
                 <TableHead>Товары</TableHead>
-                <TableHead>Создал</TableHead>
                 <TableHead>Дата</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredTransfers.map((transfer) => {
-                const totalQuantity = transfer.items.reduce((sum, item) => sum + item.quantity, 0)
-
-                return (
-                  <TableRow key={transfer.id} className="hover:bg-muted/50">
-                    <TableCell className="font-mono text-sm">{transfer.id}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">{getLocationName(transfer.fromLocation)}</span>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                        <span className="text-sm">{getLocationName(transfer.toLocation)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        {getStatusIcon(transfer.status)}
-                        {getStatusBadge(transfer.status)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        <div>{transfer.items.length} позиций</div>
-                        <div className="text-muted-foreground">{totalQuantity} ед.</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{transfer.createdBy}</TableCell>
-                    <TableCell className="text-sm">{formatDate(transfer.createdAt)}</TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => onViewTransfer(transfer)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })}
+              {paginatedTransfers.map((transfer) => (
+                <TableRow key={transfer.id} className="hover:bg-muted/50">
+                  <TableCell className="font-mono text-sm">{transfer.id}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm">{getLocationName(transfer.object_from)}</span>
+                      <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-sm">{getLocationName(transfer.object_to)}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                  <TableCell>
+                    <div className="text-sm">
+                      <div>{transfer.devices.length} позиций</div>
+                      <div className="text-muted-foreground">{transfer.device_count} ед.</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-sm">{formatDate(transfer.created_at)}</TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="sm" onClick={() => onViewTransfer(transfer)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           </Table>
-
-          {filteredTransfers.length === 0 && (
+          {paginatedTransfers.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
               <Search className="h-8 w-8 mx-auto mb-2 opacity-50" />
               <p>Трансферы не найдены</p>
@@ -188,14 +197,45 @@ export function TransferHistoryTable({ transfers, locations, onViewTransfer }: T
             </div>
           )}
         </div>
-
-        {/* Results summary */}
-        {filteredTransfers.length > 0 && (
-          <div className="mt-4 text-sm text-muted-foreground">
-            Показано {filteredTransfers.length} из {transfers.length} трансферов
+        {totalItems > 0 && (
+          <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-sm text-muted-foreground">
+              Показано {(currentPage - 1) * itemsPerPage + 1}–
+              {Math.min(currentPage * itemsPerPage, totalItems)} из {totalItems} трансферов
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <Button
+                    key={page}
+                    variant={currentPage === page ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                ))}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

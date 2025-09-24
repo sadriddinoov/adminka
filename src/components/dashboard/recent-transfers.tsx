@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
 import { Badge } from "../../components/ui/badge"
 import { ArrowRight, Clock, CheckCircle, XCircle } from "lucide-react"
-import type { Transfer, Location } from "@/src/lib/mock-api"
+import type { Transfer, Location } from "../../../src/lib/mock-api"
 
 interface RecentTransfersProps {
   transfers: Transfer[]
