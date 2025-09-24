@@ -1,42 +1,27 @@
 "use client";
 
-import type React from "react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
 import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Loader2, Lock, User } from "lucide-react";
-import { $api, setToken } from "../../config/api"; 
+import { authService } from "../../lib/auth";
 
 export function LoginForm() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-
-  // TanStack Query mutation for login
-  const { mutate: login, isPending: isLoading } = useMutation({
-    mutationFn: async (credentials: { username: string; password: string }) => {
-      const res = await $api.post("/api/login/", credentials);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      if (data.token) {
-        setToken(data.token); 
-        navigate("/dashboard");
-      } else {
-        throw new Error("No token received");
-      }
-    },
-    onError: (err: any) => {
-      const errorMessage = err.response?.data?.message || "Ошибка входа";
-      setError(errorMessage);
-    },
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +32,15 @@ export function LoginForm() {
       return;
     }
 
-    login({ password, username });
+    setIsLoading(true);
+    const result = await authService.login(username, password);
+    setIsLoading(false);
+
+    if (result.success) {
+      navigate("/dashboard");
+    } else {
+      setError(result.error || "Ошибка входа");
+    }
   };
 
   return (
@@ -115,12 +108,6 @@ export function LoginForm() {
               )}
             </Button>
           </form>
-
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground mb-2">Тестовые данные:</p>
-            <p className="text-sm font-mono">Логин: admin</p>
-            <p className="text-sm font-mono">Пароль: admin123</p>
-          </div>
         </CardContent>
       </Card>
     </div>

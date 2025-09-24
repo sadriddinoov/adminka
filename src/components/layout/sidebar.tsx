@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import {
   LayoutDashboard,
@@ -29,6 +29,7 @@ interface MEApiResponse {
 
 async function fetchMe() {
   const token = localStorage.getItem("token");
+
   const res = await fetch(`${API_URL}/api/user`, {
     headers: {
       "Content-Type": "application/json",
@@ -39,19 +40,27 @@ async function fetchMe() {
     method: "GET",
   });
 
-  if (!res.ok) throw new Error(`Failed to fetch user: ${res.statusText}`);
+  if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`);
   return res.json();
 }
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const { logout, isAuthenticated } = useAuth();
 
   const { data, isLoading, error } = useQuery<MEApiResponse>({
-    queryKey: ["user"],
-    queryFn: fetchMe,
+    queryKey: ["stats"],
+    queryFn: fetchMe
   });
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setIsOpen(false);
+      navigate("/login");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleLogout = () => {
     logout();
@@ -60,7 +69,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Mobile menu button */}
       <button
         className="fixed top-4 left-4 z-50 md:hidden p-2 rounded-lg hover:bg-accent"
         onClick={() => setIsOpen(!isOpen)}
@@ -68,7 +76,6 @@ export function Sidebar() {
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </button>
 
-      {/* Sidebar */}
       <div
         className={cn(
           "fixed inset-y-0 left-0 z-40 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out md:translate-x-0",
@@ -76,7 +83,6 @@ export function Sidebar() {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
           <div className="flex items-center px-6 py-4 border-b border-border">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
@@ -86,7 +92,6 @@ export function Sidebar() {
             </div>
           </div>
 
-          {/* Navigation */}
           <nav className="flex-1 px-4 py-6">
             {navigation.map((item) => {
               const isActive = location.pathname.startsWith(item.href);
@@ -109,7 +114,6 @@ export function Sidebar() {
             })}
           </nav>
 
-          {/* User section */}
           <div className="px-4 py-4 border-t border-border">
             {isLoading ? (
               <div className="flex items-center space-x-3 mb-3">
@@ -139,8 +143,8 @@ export function Sidebar() {
                   </span>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{data?.name || "Пользователь"}</p>
-                  <p className="text-xs text-muted-foreground">{data?.username || "Неизвестно"}</p>
+                  <p className="text-sm font-medium">{data?.name}</p>
+                  <p className="text-xs text-muted-foreground">{data?.username}</p>
                 </div>
               </div>
             )}
@@ -155,7 +159,6 @@ export function Sidebar() {
         </div>
       </div>
 
-      {/* Overlay for mobile */}
       {isOpen && (
         <div
           className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden"
