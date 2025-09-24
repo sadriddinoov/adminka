@@ -8,8 +8,6 @@ import { Button } from "../components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "../components/ui/dialog";
 import { API_URL } from "../config";
@@ -182,9 +180,6 @@ export function TransfersPage() {
               </Button>
             </DialogTrigger>
             <DialogContent className="min-w-[600px] max-h-[95vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Создать новый трансфер</DialogTitle>
-              </DialogHeader>
               <TransferForm
                 onTransferCreated={handleTransferCreated}
                 onCancel={() => setIsFormOpen(false)}

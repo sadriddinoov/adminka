@@ -13,10 +13,6 @@ import { ArrowRight, Plus, Trash2, AlertTriangle, CheckCircle, Loader2 } from "l
 import { API_URL } from "../../config";
 import toast from "react-hot-toast";
 
-interface TransferFormProps {
-  onTransferComplete: () => void;
-}
-
 interface Location {
   id: string;
   name: string;
@@ -50,17 +46,20 @@ async function fetchLocations() {
 
   if (!res.ok) throw new Error(`Failed to fetch locations: ${res.statusText}`);
   const data = await res.json();
+  console.log("API /api/objects response:", data);
   return Array.isArray(data)
     ? data.map((loc: any) => ({
-        ...loc,
-        id: loc.id.toString(),
+        id: loc.object.id.toString(),
+        name: loc.object.name,
+        object_address: loc.object.object_address,
+        created_at: loc.object.created_at,
       }))
     : [];
 }
 
 async function fetchDevices(objectName: string) {
   const token = localStorage.getItem("token");
-  const res = await fetch(`${API_URL}/api/devices?object_name=${encodeURIComponent(objectName)}`, {
+  const res = await fetch(`${API_URL}/api/objects`, {
     headers: {
       "Content-Type": "application/json",
       "Connection": "keep-alive",
@@ -72,8 +71,12 @@ async function fetchDevices(objectName: string) {
 
   if (!res.ok) throw new Error(`Failed to fetch devices: ${res.statusText}`);
   const data = await res.json();
-  return Array.isArray(data)
-    ? data.map((d: any) => ({
+  console.log("API /api/objects response for devices:", data);
+  const location = Array.isArray(data)
+    ? data.find((loc: any) => loc.object.name === objectName)
+    : null;
+  return location && Array.isArray(location.devices)
+    ? location.devices.map((d: any) => ({
         id: d.id.toString(),
         name: d.device_name,
         quantity: d.device_count,
@@ -118,7 +121,6 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
     const loadLocations = async () => {
       try {
         const data = await fetchLocations();
-        console.log("API /api/objects response:", data);
         setLocations(data);
       } catch (err) {
         console.error("Error loading locations:", err);
@@ -136,7 +138,6 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
         if (location) {
           try {
             const data = await fetchDevices(location.name);
-            console.log("API /api/devices response:", data);
             setAvailableItems(data);
             setTransferItems([]);
           } catch (err) {
@@ -251,12 +252,8 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
     }
   };
 
-  const fromLocationName = Array.isArray(locations)
-    ? locations.find((l) => l.id === fromLocation)?.name || ""
-    : "";
-  const toLocationName = Array.isArray(locations)
-    ? locations.find((l) => l.id === toLocation)?.name || ""
-    : "";
+  const fromLocationName = locations.find((l) => l.id === fromLocation)?.name || "";
+  const toLocationName = locations.find((l) => l.id === toLocation)?.name || "";
 
   return (
     <Card>
