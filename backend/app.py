@@ -18,6 +18,10 @@ OPENAPI_TAGS = [
     {"name": "4. Transfer", "description": "Перенос устройства между объектами; запись в историю."},
     {"name": "5. Search", "description": "Поиск по объектам и устройствам + глобальные счётчики."},
     {"name": "6. Stats", "description": "Сводная статистика."},
+<<<<<<< HEAD
+=======
+    {"name": "6. Check Server", "description": "Проверка сервера"},
+>>>>>>> e6ccade (update)
 ]
 
 # =========================
@@ -182,9 +186,24 @@ def parse_token(token: str) -> Optional[str]:
         if len(parts) != 3:
             return None
         username, ts, sig = parts
+<<<<<<< HEAD
         expected = hmac.new(SECRET_KEY.encode(), f"{username}:{ts}".encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, sig):
             return None
+=======
+
+        # подпись
+        expected = hmac.new(SECRET_KEY.encode(), f"{username}:{ts}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+
+        # срок жизни
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        issued_ts = int(ts)
+        if now_ts - issued_ts > TOKEN_TTL_SECONDS:
+            return None  # истёк
+
+>>>>>>> e6ccade (update)
         row = db_exec("SELECT is_active FROM users WHERE username=%s", (username,), fetch="one")
         return username if (row and bool(row[0])) else None
     except Exception:
@@ -203,16 +222,33 @@ def require_bearer_token(authorization: str = Header(None)):
     return username
 
 
+<<<<<<< HEAD
 def parse_token_user(token: str) -> Optional[str]:
+=======
+def parse_token_user(token: str) -> Optional[tuple]:
+>>>>>>> e6ccade (update)
     try:
         raw = base64.urlsafe_b64decode(token.encode()).decode()
         parts = raw.split(":")
         if len(parts) != 3:
             return None
         username, ts, sig = parts
+<<<<<<< HEAD
         expected = hmac.new(SECRET_KEY.encode(), f"{username}:{ts}".encode(), hashlib.sha256).hexdigest()
         if not hmac.compare_digest(expected, sig):
             return None
+=======
+
+        expected = hmac.new(SECRET_KEY.encode(), f"{username}:{ts}".encode(), hashlib.sha256).hexdigest()
+        if not hmac.compare_digest(expected, sig):
+            return None
+
+        now_ts = int(datetime.now(timezone.utc).timestamp())
+        issued_ts = int(ts)
+        if now_ts - issued_ts > TOKEN_TTL_SECONDS:
+            return None  # истёк
+
+>>>>>>> e6ccade (update)
         row = db_exec("SELECT * FROM users WHERE username=%s", (username,), fetch="one")
         return row
     except Exception:
@@ -339,7 +375,22 @@ def api_login(body: LoginRequest):
     pwd_hash, is_active = row[0], bool(row[1])
     if not is_active or not verify_password(password, pwd_hash):
         raise HTTPException(status_code=401, detail="invalid_credentials")
+<<<<<<< HEAD
     return {"time": get_uzbek_time_iso(), "token": make_token(username)}
+=======
+
+        # время истечения (UZT)
+    exp_uz = (datetime.now(timezone.utc) + timedelta(seconds=TOKEN_TTL_SECONDS)) \
+        .astimezone(timezone(timedelta(hours=5))) \
+        .isoformat(sep=' ', timespec='seconds')
+
+    return {
+        "time": get_uzbek_time_iso(),
+        "token": make_token(username),
+        "expires_at": exp_uz,  # когда истечёт в час.поясе Узбекистана
+        "ttl_seconds": TOKEN_TTL_SECONDS  # на всякий случай
+    }
+>>>>>>> e6ccade (update)
 
 @app.get("/api/user", tags=["1. Auth"], summary="About The User")
 def get_user(user: str = Depends(require_bearer_token_user)):
@@ -379,6 +430,7 @@ def http_get_object_by_name(object_name: str = Path(..., example="ГАИ №1"),
             "created_at": row[3].isoformat() if row[3] else None}
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 @app.get("/api/objects", tags=["2. Objects"], summary="Список объектов (поиск и пагинация)")
 def http_list_objects(
     q: Optional[str] = Query(None, example="Таш"),
@@ -403,6 +455,8 @@ def http_list_objects(
     return [{"id": r[0], "name": r[1], "object_address": r[2],
              "created_at": r[3].isoformat() if r[3] else None} for r in rows]
 =======
+=======
+>>>>>>> e6ccade (update)
 @app.get("/api/objects", tags=["2. Objects"], summary="Список объектов (поиск, пагинация) + их устройства и суммы")
 def http_list_objects(
     q: Optional[str] = Query(None, example=""),
@@ -488,7 +542,10 @@ def http_list_objects(
         result.append(item)
 
     return result
+<<<<<<< HEAD
 >>>>>>> c6c12ee (first commit)
+=======
+>>>>>>> e6ccade (update)
 
 
 @app.get(
@@ -814,3 +871,10 @@ def http_stats(user: str = Depends(require_bearer_token)):
     total_locations, total_devices, total_transfers + распределение устройств по объектам.
     """
     return collect_stats()
+<<<<<<< HEAD
+=======
+
+@app.get('/api/ping', tags=["7. PING"], summary="Проверка сервера")
+def http_ping():
+    return {"ping": "pong"}
+>>>>>>> e6ccade (update)

@@ -9,6 +9,13 @@ PGDATABASE = os.getenv("PGDATABASE")
 PGUSER = os.getenv("PGUSER", "postgres")
 PGPASSWORD = os.getenv("PGPASSWORD")
 SECRET_KEY = os.getenv("SECRET_KEY")
+<<<<<<< HEAD
+=======
+<<<<<<< HEAD
+=======
+TOKEN_TTL_SECONDS = int(os.getenv("TOKEN_TTL_SECONDS", "2592000"))  # 30 * 24 * 60 * 60
+>>>>>>> 3e7dc91 (first commit)
+>>>>>>> e6ccade (update)
 
 ADMIN_USERNAME = os.getenv("ADMIN_USERNAME")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD")
