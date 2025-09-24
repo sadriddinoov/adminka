@@ -26,3 +26,12 @@ export const removeToken = () => {
   localStorage.removeItem(tokenName);
   delete $api.defaults.headers.common.Authorization;
 };
+// get locations
+export const getObjects = async (id: Number) => {
+  const { data } = await $api.get(`/objects/${id}`);
+  return data;
+};
+
+// get location by id
+
+// get location by name

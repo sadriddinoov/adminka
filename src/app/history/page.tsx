@@ -1,15 +1,17 @@
-import { useState, useEffect } from "react"
-import { AppLayout } from "../../components/layout/app-layout"
-import { TransferHistoryTable } from "../../components/history/transfer-history-table"
-import { TransferDetailModal } from "../../components/transfers/transfer-detail-modal"
-import { mockAPI, type Location, type Transfer } from "../../lib/mock-api"
-import { Loader2 } from "lucide-react"
+import { useState, useEffect } from "react";
+import { AppLayout } from "../../components/layout/app-layout";
+import { TransferHistoryTable } from "../../components/history/transfer-history-table";
+import { TransferDetailModal } from "../../components/transfers/transfer-detail-modal";
+import { mockAPI, type Location, type Transfer } from "../../lib/mock-api";
+import { Loader2 } from "lucide-react";
 
 export function HistoryPage() {
-  const [locations, setLocations] = useState<Location[]>([])
-  const [transfers, setTransfers] = useState<Transfer[]>([])
-  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [selectedTransfer, setSelectedTransfer] = useState<Transfer | null>(
+    null
+  );
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadData = async () => {
@@ -17,31 +19,37 @@ export function HistoryPage() {
         const [locationsData, transfersData] = await Promise.all([
           mockAPI.getLocations(),
           mockAPI.getTransfers(),
-        ])
-        setLocations(locationsData)
-        setTransfers(transfersData)
+        ]);
+        setLocations(locationsData);
+        setTransfers(transfersData);
       } catch (error) {
-        console.error("Error loading history data:", error)
+        console.error("Error loading history data:", error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   if (isLoading) {
     return (
-      <AppLayout title="История трансферов" subtitle="Полная история всех операций">
+      <AppLayout
+        title="История трансферов"
+        subtitle="Полная история всех операций"
+      >
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
       </AppLayout>
-    )
+    );
   }
 
   return (
-    <AppLayout title="История трансферов" subtitle="Полная история всех операций">
+    <AppLayout
+      title="История трансферов"
+      subtitle="Полная история всех операций"
+    >
       <TransferHistoryTable
         transfers={transfers}
         locations={locations}
@@ -56,5 +64,5 @@ export function HistoryPage() {
         onClose={() => setSelectedTransfer(null)}
       />
     </AppLayout>
-  )
+  );
 }

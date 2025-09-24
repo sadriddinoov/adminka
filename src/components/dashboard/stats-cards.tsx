@@ -1,22 +1,39 @@
-"use client"
+"use client";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Building2, Package, ArrowLeftRight, AlertTriangle } from "lucide-react"
-import type { Location, Transfer } from "@/src/lib/mock-api"
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import {
+  Building2,
+  Package,
+  ArrowLeftRight,
+  AlertTriangle,
+} from "lucide-react";
+import type { Location, Transfer } from "@/src/lib/mock-api";
 
 interface StatsCardsProps {
-  locations: Location[]
-  transfers: Transfer[]
+  locations: Location[];
+  transfers: Transfer[];
 }
 
 export function StatsCards({ locations, transfers }: StatsCardsProps) {
-  const totalItems = locations.reduce((sum, location) => sum + location.items.length, 0)
+  const totalItems = locations.reduce(
+    (sum, location) => sum + location.items.length,
+    0
+  );
   const totalQuantity = locations.reduce(
-    (sum, location) => sum + location.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-    0,
-  )
-  const pendingTransfers = transfers.filter((t) => t.status === "pending").length
-  const failedTransfers = transfers.filter((t) => t.status === "failed").length
+    (sum, location) =>
+      sum +
+      location.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+    0
+  );
+  const pendingTransfers = transfers.filter(
+    (t) => t.status === "pending"
+  ).length;
+  const failedTransfers = transfers.filter((t) => t.status === "failed").length;
 
   const stats = [
     {
@@ -44,7 +61,7 @@ export function StatsCards({ locations, transfers }: StatsCardsProps) {
       description: "Требуют внимания",
       variant: failedTransfers > 0 ? "destructive" : "default",
     },
-  ]
+  ];
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -61,5 +78,5 @@ export function StatsCards({ locations, transfers }: StatsCardsProps) {
         </Card>
       ))}
     </div>
-  )
+  );
 }
