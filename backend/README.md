@@ -163,6 +163,7 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 ```
 .
 ├── app.py
+├── config.py
 ├── .env
 ├── requirements.txt
 └── README.md
