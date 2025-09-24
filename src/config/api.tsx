@@ -1,8 +1,9 @@
 // api.ts
+import { API_URL } from ".";
 import axios from "axios";
 
 export const $api = axios.create({
-  baseURL: import.meta.env?.VITE_API_URL,
+  baseURL: API_URL,
   headers: {
     Accept: "application/json",
   },
