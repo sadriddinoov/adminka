@@ -10,4 +10,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: "https://equally-credible-terrier.ngrok-free.app",
+        changeOrigin: true, 
+        secure: true,
+        rewrite: (path) => path.replace(/^\/api/, '/api'), // Опционально: если нужно переписать путь (здесь оставляем /api)
+      },
+    },
+  },
 })
