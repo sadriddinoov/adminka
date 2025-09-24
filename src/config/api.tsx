@@ -16,6 +16,7 @@ export const initApp = () => {
   if (token) {
     $api.defaults.headers.common.Authorization = `Bearer ${token}`;
   }
+  console.log("token", token);
 };
 
 export const setToken = (token: string) => {
@@ -28,11 +29,10 @@ export const removeToken = () => {
   delete $api.defaults.headers.common.Authorization;
 };
 // get locations
-export const getObjects = async (id: Number) => {
-  const { data } = await $api.get(`/objects/${id}`);
-  return data;
-};
+// export const getObjects = async () => {
+//   const { data } = await $api.get(`/api/objects/`);
+//   console.log(data)
+//   return data;
+// };
 
-// get location by id
-
-// get location by name
+// getObjects()

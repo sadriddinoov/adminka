@@ -24,12 +24,12 @@ export function StatsCards({ locations, transfers }: StatsCardsProps) {
     (sum, location) => sum + location.items.length,
     0
   );
-  const totalQuantity = locations.reduce(
-    (sum, location) =>
-      sum +
-      location.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
-    0
-  );
+  // const totalQuantity = locations.reduce(
+  //   (sum, location) =>
+  //     sum +
+  //     location.items.reduce((itemSum, item) => itemSum + item.quantity, 0),
+  //   0
+  // );
   const pendingTransfers = transfers.filter(
     (t) => t.status === "pending"
   ).length;
@@ -46,7 +46,8 @@ export function StatsCards({ locations, transfers }: StatsCardsProps) {
       title: "Товарных позиций",
       value: totalItems,
       icon: Package,
-      description: `Общее количество: ${totalQuantity}`,
+      // description: `Общее количество: ${totalQuantity}`,
+      description: `Общее количество: ${totalItems}`,
     },
     {
       title: "Активных трансферов",

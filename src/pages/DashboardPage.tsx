@@ -1,34 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AppLayout } from "../components/layout/app-layout";
 import { StatsCards } from "../components/dashboard/stats-cards";
 import { LocationsGrid } from "../components/dashboard/locations-grid";
 import { RecentTransfers } from "../components/dashboard/recent-transfers";
 import { LocationDetailModal } from "../components/dashboard/location-detail-modal";
 // import { mockAPI } from "../lib/mock-api";
-// import type { Location, Transfer } from "../types/api";
+import type { Location, Transfer } from "../types/api";
 import { Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { getObjects } from "../config/api";
 
 export function DashboardPage() {
   // const [locations, setLocations] = useState<Location[]>([]);
-  // const [transfers, setTransfers] = useState<Transfer[]>([]);
+  const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(
     null
   );
-
-  const {
-    data: locations,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["objects"],
-    queryFn: () => getObjects(),
-  });
-  console.log("api locatins", locations);
-
+  const isLoading = false;
+  const error = false;
+  const locations = {};
   if (isLoading) return <p>Loading...</p>;
   if (error) return <p>Xatolik yuz berdi</p>;
   if (isLoading) {
@@ -46,7 +37,7 @@ export function DashboardPage() {
     <AppLayout title="Панель управления" subtitle="Обзор складских операций">
       <div className="space-y-6">
         {/* Stats Cards */}
-        <StatsCards locations={locations} transfers={transfers} />
+        {/* <StatsCards locations={locations} transfers={transfers} /> */}
 
         {/* Main Content Grid */}
         <div className="grid gap-6 lg:grid-cols-3">
@@ -58,10 +49,10 @@ export function DashboardPage() {
                 Управление товарами по локациям
               </p>
             </div>
-            <LocationsGrid
+            {/* <LocationsGrid
               locations={locations}
               onViewLocation={setSelectedLocation}
-            />
+            /> */}
           </div>
 
           {/* Recent Transfers - Takes 1 column */}
