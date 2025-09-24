@@ -1,22 +1,27 @@
-"use client"
+import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card";
+import { Badge } from "../../components/ui/badge";
+import { Button } from "../../components/ui/button";
+import { Building2, Package, Eye } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle } from "../../components/ui/card"
-import { Badge } from "../../components/ui/badge"
-import { Button } from "../../components/ui/button"
-import { Building2, Package, Eye } from "lucide-react"
-import type { Location } from "@/src/lib/mock-api"
+interface Location {
+  id: string;
+  name: string;
+  address: string;
+  created_at: string;
+  items: { id: string; name: string; quantity: number; unit: string }[];
+}
 
 interface LocationsGridProps {
-  locations: Location[]
-  onViewLocation: (location: Location) => void
+  locations: Location[];
+  onViewLocation: (location: Location) => void;
 }
 
 export function LocationsGrid({ locations, onViewLocation }: LocationsGridProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {locations.map((location) => {
-        const totalQuantity = location.items.reduce((sum, item) => sum + item.quantity, 0)
-        const lowStockItems = location.items.filter((item) => item.quantity < 50).length
+        const totalQuantity = location.items.reduce((sum, item) => sum + item.quantity, 0);
+        const lowStockItems = location.items.filter((item) => item.quantity < 50).length;
 
         return (
           <Card key={location.id} className="hover:shadow-md transition-shadow">
@@ -68,8 +73,8 @@ export function LocationsGrid({ locations, onViewLocation }: LocationsGridProps)
               </div>
             </CardContent>
           </Card>
-        )
+        );
       })}
     </div>
-  )
+  );
 }

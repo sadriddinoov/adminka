@@ -29,7 +29,7 @@ export function LocationDetailModal({
     0
   );
 
-  const lowStockItems = location.items.filter((item) => item.quantity < 50);
+  const lowStockItems = location.items.filter((item) => item.quantity < 5);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -91,12 +91,12 @@ export function LocationDetailModal({
                   <div className="text-right">
                     <div
                       className={`font-semibold ${
-                        item.quantity < 50 ? "text-destructive" : ""
+                        item.quantity < 5 ? "text-destructive" : ""
                       }`}
                     >
                       {item.quantity} {item.unit}
                     </div>
-                    {item.quantity < 50 && (
+                    {item.quantity < 5 && (
                       <Badge variant="destructive" className="text-xs">
                         Низкий остаток
                       </Badge>
