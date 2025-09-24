@@ -1,24 +1,21 @@
-"use client"
-
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function HomePage() {
-  const router = useRouter()
+  const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const isAuthenticated = localStorage.getItem("isAuthenticated")
+    const isAuthenticated = localStorage.getItem("isAuthenticated");
     if (isAuthenticated) {
-      router.push("/dashboard")
+      navigate("/dashboard");
     } else {
-      router.push("/login")
+      navigate("/login");
     }
-  }, [router])
+  }, [navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
     </div>
-  )
+  );
 }

@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AppLayout } from "@/components/layout/app-layout"
-import { StatsCards } from "@/components/dashboard/stats-cards"
-import { LocationsGrid } from "@/components/dashboard/locations-grid"
-import { RecentTransfers } from "@/components/dashboard/recent-transfers"
-import { LocationDetailModal } from "@/components/dashboard/location-detail-modal"
-import { mockAPI, type Location, type Transfer } from "@/lib/mock-api"
+import { AppLayout } from "../../components/layout/app-layout"
+import { StatsCards } from "../../components/dashboard/stats-cards"
+import { LocationsGrid } from "../../components/dashboard/locations-grid"
+import { RecentTransfers } from "../../components/dashboard/recent-transfers"
+import { LocationDetailModal } from "../../components/dashboard/location-detail-modal"
+import { mockAPI, type Location, type Transfer } from "../../lib/mock-api"
 import { Loader2 } from "lucide-react"
 
 export default function DashboardPage() {

@@ -1,10 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { AppLayout } from "@/components/layout/app-layout"
-import { TransferForm } from "@/components/transfers/transfer-form"
-import { ActiveTransfers } from "@/components/transfers/active-transfers"
-import { TransferDetailModal } from "@/components/transfers/transfer-detail-modal"
+import { AppLayout } from "../../components/layout/app-layout"
+import { TransferForm } from "../../components/transfers/transfer-form"
+import { ActiveTransfers } from "../../components/transfers/active-transfers"
+import { TransferDetailModal } from "../../components/transfers/transfer-detail-modal"
 import { mockAPI, type Location, type Transfer } from "../../lib/mock-api"
 import { Loader2 } from "lucide-react"
 
