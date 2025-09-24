@@ -1,128 +1,179 @@
-import { useState, useEffect } from "react"
-import { AppLayout } from "../../components/layout/app-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Label } from "../../components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
-import { Textarea } from "../../components/ui/textarea"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../components/ui/tabs"
-import { Alert, AlertDescription } from "../../components/ui/alert"
-import { Plus, Package, MapPin, CheckCircle, AlertCircle } from "lucide-react"
-import { mockAPI, type Location, type Item } from "../../lib/mock-api"
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AppLayout } from "../../components/layout/app-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import { Textarea } from "../../components/ui/textarea";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "../../components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../components/ui/select";
+import { Alert, AlertDescription } from "../../components/ui/alert";
+import { Plus, Package, MapPin, CheckCircle, AlertCircle } from "lucide-react";
+import { API_URL } from "../../config";
+
+// -------- GET Locations ----------
+async function fetchObjects() {
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API_URL}/api/objects/`, {
+    headers: {
+      "Content-Type": "application/json",
+      Connection: "keep-alive",
+      Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
+    },
+    method: "GET",
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch objects: ${res.statusText}`);
+  }
+
+  return await res.json();
+}
+
+// -------- POST Location ----------
+async function postLocation(newLocation: {
+  object_name: string;
+  object_address: string;
+}) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/api/objects/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(newLocation),
+  });
+  if (!res.ok) throw new Error("Ошибка при добавлении локации");
+  return res.json();
+}
+
+async function postItem(newItem: {
+  device_name: string;
+  object_name: string;
+  description: string;
+  device_count: number;
+}) {
+  const token = localStorage.getItem("token");
+  const res = await fetch(`${API_URL}/api/devices/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify(newItem),
+  });
+  if (!res.ok) throw new Error("Ошибка при добавлении товара");
+  return res.json();
+}
 
 export default function AddObjectsPage() {
-  const [activeTab, setActiveTab] = useState("items")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState("items");
 
-  // Item form state
+  // Forms state
   const [itemForm, setItemForm] = useState({
-    name: "",
-    quantity: "",
-    unit: "",
-    locationId: "",
-  })
+    device_name: "",
+    object_name: "",
+    description: "",
+    device_count: 0
+  });
 
-  // Location form state
   const [locationForm, setLocationForm] = useState({
-    name: "",
-    address: "",
-  })
+    object_name: "",
+    object_address: "",
+  });
 
-  const [locations, setLocations] = useState<Location[]>([])
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Load locations on component mount
-  useEffect(() => {
-    const loadLocations = async () => {
-      try {
-        const data = await mockAPI.getLocations()
-        setLocations(data)
-      } catch (err) {
-        console.error("Error loading locations:", err)
-      }
-    }
-    loadLocations()
-  }, [])
+  const queryClient = useQueryClient();
 
-  const handleAddItem = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
-    setSuccess(null)
+  // GET objects
+  const {
+    data: locations,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["objects"],
+    queryFn: fetchObjects,
+  });
+  console.log(locations);
 
-    try {
-      if (!itemForm.name || !itemForm.quantity || !itemForm.unit || !itemForm.locationId) {
-        throw new Error("Все поля обязательны для заполнения")
-      }
+  // POST Location
+  const { mutate: addLocation, isPending: isAddingLocation } = useMutation({
+    mutationFn: postLocation,
+    onSuccess: () => {
+      setSuccess("Локация успешно добавлена ✅");
+      setError(null);
+      setLocationForm({ object_name: "", object_address: "" });
+      queryClient.invalidateQueries({ queryKey: ["objects"] });
+    },
+    onError: () => {
+      setError("Ошибка при добавлении локации ❌");
+      setSuccess(null);
+    },
+  });
 
-      const quantity = Number.parseInt(itemForm.quantity)
-      if (isNaN(quantity) || quantity <= 0) {
-        throw new Error("Количество должно быть положительным числом")
-      }
+  // POST Item
+  const { mutate: addItem, isPending: isAddingItem } = useMutation({
+    mutationFn: postItem,
+    onSuccess: () => {
+      setSuccess("Товар успешно добавлен ✅");
+      setError(null);
+      setItemForm({
+        device_name: "",
+        object_name: "",
+        description: "",
+        device_count: 0,
+      });
+    },
+    onError: () => {
+      setError("Ошибка при добавлении товара ❌");
+      setSuccess(null);
+    },
+  });
 
-      const newItem: Item = {
-        id: `item-${Date.now()}`,
-        name: itemForm.name,
-        quantity: quantity,
-        unit: itemForm.unit,
-      }
+  const handleSubmitLocation = (e: React.FormEvent) => {
+    e.preventDefault();
+    addLocation(locationForm);
+  };
 
-      setLocations((prev) =>
-        prev.map((l) =>
-          l.id === itemForm.locationId ? { ...l, items: [...l.items, newItem] } : l,
-        ),
-      )
-
-      setSuccess(`Товар "${itemForm.name}" успешно добавлен`)
-      setItemForm({ name: "", quantity: "", unit: "", locationId: "" })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleAddLocation = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
-    setSuccess(null)
-
-    try {
-      if (!locationForm.name || !locationForm.address) {
-        throw new Error("Все поля обязательны для заполнения")
-      }
-
-      const newLocation: Location = {
-        id: `location-${Date.now()}`,
-        name: locationForm.name,
-        address: locationForm.address,
-        items: [],
-      }
-
-      setLocations((prev) => [...prev, newLocation])
-      setSuccess(`Локация "${locationForm.name}" успешно добавлена`)
-      setLocationForm({ name: "", address: "" })
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Произошла ошибка")
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
+  const handleSubmitItem = (e: React.FormEvent) => {
+    e.preventDefault();
+    addItem(itemForm);
+  };
   return (
-    <AppLayout title="Добавить объекты" subtitle="Добавление новых товаров и локаций в систему">
+    <AppLayout
+      title="Добавить объекты и товары"
+      subtitle="Создание новых товаров и складских локаций"
+    >
       <div className="max-w-4xl space-y-6">
-        {/* Status Messages */}
         {success && (
           <Alert className="border-green-200 bg-green-50 text-green-800">
             <CheckCircle className="h-4 w-4" />
             <AlertDescription>{success}</AlertDescription>
           </Alert>
         )}
-
         {error && (
           <Alert className="border-red-200 bg-red-50 text-red-800">
             <AlertCircle className="h-4 w-4" />
@@ -130,7 +181,7 @@ export default function AddObjectsPage() {
           </Alert>
         )}
 
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="items" className="flex items-center">
               <Package className="mr-2 h-4 w-4" />
@@ -142,49 +193,49 @@ export default function AddObjectsPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Add Item Tab */}
+          {/* Items tab */}
           <TabsContent value="items">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Package className="mr-2 h-5 w-5" />
-                  Добавить новый товар
-                </CardTitle>
+                <CardTitle>Добавить новый товар</CardTitle>
                 <CardDescription>
-                  Добавьте новый товар в выбранную складскую локацию
+                  Добавьте товар в выбранную складскую локацию
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddItem} className="space-y-4">
+                <form onSubmit={handleSubmitItem} className="space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="item-name">Название товара *</Label>
+                    <div>
+                      <Label className="mb-2">Название товара *</Label>
                       <Input
-                        id="item-name"
-                        placeholder="Введите название товара"
-                        value={itemForm.name}
+                        value={itemForm.device_name}
                         onChange={(e) =>
-                          setItemForm((prev) => ({ ...prev, name: e.target.value }))
+                          setItemForm((prev) => ({
+                            ...prev,
+                            device_name: e.target.value,
+                          }))
                         }
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="item-location">Локация *</Label>
+                    <div>
+                      <Label className="mb-2">Локация *</Label>
                       <Select
-                        value={itemForm.locationId}
+                        value={itemForm.object_name}
                         onValueChange={(value) =>
-                          setItemForm((prev) => ({ ...prev, locationId: value }))
+                          setItemForm((prev) => ({
+                            ...prev,
+                            object_name: value,
+                          }))
                         }
-                        required
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Выберите локацию" />
                         </SelectTrigger>
                         <SelectContent>
-                          {locations.map((location) => (
-                            <SelectItem key={location.id} value={location.id}>
-                              {location.name}
+                          {locations?.map((loc: any) => (
+                            <SelectItem key={loc.id} value={loc.name}>
+                              {loc.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -193,130 +244,94 @@ export default function AddObjectsPage() {
                   </div>
 
                   <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="item-quantity">Количество *</Label>
+                    <div>
+                      <Label className="mb-2">Количество *</Label>
                       <Input
-                        id="item-quantity"
                         type="number"
-                        min="1"
                         placeholder="0"
-                        value={itemForm.quantity}
+                        value={itemForm.device_count}
                         onChange={(e) =>
-                          setItemForm((prev) => ({ ...prev, quantity: e.target.value }))
+                          setItemForm((prev) => ({
+                            ...prev,
+                            device_count: Number(e.target.value),
+                          }))
                         }
                         required
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="item-unit">Единица измерения *</Label>
-                      <Select
-                        value={itemForm.unit}
-                        onValueChange={(value) =>
-                          setItemForm((prev) => ({ ...prev, unit: value }))
+                    <div>
+                      <Label className="mb-2">Описание *</Label>
+                      <Textarea
+                        className=""
+                        value={itemForm.description}
+                        onChange={(e) =>
+                          setItemForm((prev) => ({
+                            ...prev,
+                            description: e.target.value,
+                          }))
                         }
                         required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Выберите единицу" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="шт">Штуки</SelectItem>
-                          <SelectItem value="кг">Килограммы</SelectItem>
-                          <SelectItem value="л">Литры</SelectItem>
-                          <SelectItem value="м">Метры</SelectItem>
-                          <SelectItem value="м²">Квадратные метры</SelectItem>
-                          <SelectItem value="м³">Кубические метры</SelectItem>
-                          <SelectItem value="упак">Упаковки</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      />
                     </div>
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      {isSubmitting ? "Добавление..." : "Добавить товар"}
-                    </Button>
-                  </div>
+                  <Button type="submit" disabled={isAddingItem}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {isAddingItem ? "Добавление..." : "Добавить товар"}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Add Location Tab */}
+          {/* Locations tab */}
           <TabsContent value="locations">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <MapPin className="mr-2 h-5 w-5" />
-                  Добавить новую локацию
-                </CardTitle>
+                <CardTitle>Добавить новую локацию</CardTitle>
                 <CardDescription>
-                  Создайте новую складскую локацию для хранения товаров
+                  Создайте складскую локацию для хранения товаров
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleAddLocation} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="location-name">Название локации *</Label>
+                <form onSubmit={handleSubmitLocation} className="space-y-4">
+                  <div>
+                    <Label className="mb-2">Название объекта *</Label>
                     <Input
-                      id="location-name"
-                      placeholder="Введите название локации"
-                      value={locationForm.name}
+                      value={locationForm.object_name}
                       onChange={(e) =>
-                        setLocationForm((prev) => ({ ...prev, name: e.target.value }))
+                        setLocationForm((prev) => ({
+                          ...prev,
+                          object_name: e.target.value,
+                        }))
                       }
                       required
                     />
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location-address">Адрес *</Label>
+                  <div>
+                    <Label className="mb-2">Адрес *</Label>
                     <Textarea
-                      id="location-address"
-                      placeholder="Введите полный адрес локации"
-                      value={locationForm.address}
+                      value={locationForm.object_address}
                       onChange={(e) =>
-                        setLocationForm((prev) => ({ ...prev, address: e.target.value }))
+                        setLocationForm((prev) => ({
+                          ...prev,
+                          object_address: e.target.value,
+                        }))
                       }
                       required
-                      rows={3}
                     />
                   </div>
 
-                  <div className="flex justify-end">
-                    <Button type="submit" disabled={isSubmitting}>
-                      <Plus className="mr-2 h-4 w-4" />
-                      {isSubmitting ? "Добавление..." : "Добавить локацию"}
-                    </Button>
-                  </div>
+                  <Button type="submit" disabled={isAddingLocation}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {isAddingLocation ? "Добавление..." : "Добавить локацию"}
+                  </Button>
                 </form>
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Current Locations Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Текущие локации</CardTitle>
-            <CardDescription>Обзор существующих складских локаций</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {locations.map((location) => (
-                <div key={location.id} className="p-4 border rounded-lg">
-                  <h4 className="font-medium">{location.name}</h4>
-                  <p className="text-sm text-muted-foreground mb-2">{location.address}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Товаров: {location.items.length}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </AppLayout>
-  )
+  );
 }

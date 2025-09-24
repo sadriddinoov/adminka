@@ -10,10 +10,8 @@ import { AuthGuard } from "./components/auth/auth-guard";
 import { LoginPage } from "./pages/LoginPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { TransfersPage } from "./pages/TransfersPage";
-import { SettingsPage } from "./pages/SettingsPage";
 import "./index.css";
 import AddObjectsPage from "./app/add-objects/page";
-import { HistoryPage } from "./app/history/page";
 
 function App() {
   return (
@@ -39,27 +37,10 @@ function App() {
             }
           />
           <Route
-            path="/objects"
-            element={
-              <AuthGuard>
-                <SettingsPage />
-              </AuthGuard>
-            }
-          />
-          <Route
             path="/add-objects"
             element={
               <AuthGuard>
                 <AddObjectsPage />
-              </AuthGuard>
-            }
-          />
-
-          <Route
-            path="/history"
-            element={
-              <AuthGuard>
-                <HistoryPage />
               </AuthGuard>
             }
           />
