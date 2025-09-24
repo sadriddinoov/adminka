@@ -1,5 +1,0 @@
-fastapi[standard]
-uvicorn[standard]
-python-dotenv
-psycopg2-binary
-bcrypt
