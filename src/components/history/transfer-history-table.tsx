@@ -4,9 +4,8 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
-import { ArrowRight, Eye, Search, Filter, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Eye, Search, CheckCircle, Clock, XCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge } from "../ui/badge";
 
 interface Location {
@@ -49,6 +48,8 @@ export function TransferHistoryTable({
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("date-desc");
+
+  console.log(setStatusFilter, setSortBy)
 
   const getLocationName = (objectName: string) => {
     return locations.find((l) => l.name === objectName)?.name || objectName;

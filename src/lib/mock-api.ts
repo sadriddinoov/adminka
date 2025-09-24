@@ -2,13 +2,6 @@
 import mockData from "../scripts/mock-data.json"
 import { notificationService } from "./notifications"
 
-export interface Location {
-  id: string
-  name: string
-  address: string
-  items: Item[]
-}
-
 export interface Item {
   id: string
   name: string
@@ -16,21 +9,25 @@ export interface Item {
   unit: string
 }
 
-export interface Transfer {
-  id: string
-  fromLocation: string
-  toLocation: string
-  items: TransferItem[]
-  status: "pending" | "completed" | "failed"
-  createdBy: string
-  createdAt: string
-  completedAt?: string
-  error?: string
+export interface Location {
+  id: string;
+  name: string;
+  address: string;
+  created_at: string;
+  items: { id: string; name: string; quantity: number; unit: string }[];
 }
-
+export interface Transfer {
+  id: string;
+  fromLocation: string;
+  toLocation: string;
+  items: TransferItem[];
+  createdAt: string;
+  status: "completed" | "pending" | "failed";
+  error?: string | null;
+}
 export interface TransferItem {
-  itemId: string
-  quantity: number
+  itemId: string;
+  quantity: number;
 }
 
 export interface User {

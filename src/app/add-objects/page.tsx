@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "../../components/layout/app-layout";
@@ -29,10 +31,16 @@ import { Alert, AlertDescription } from "../../components/ui/alert";
 import { Plus, Package, MapPin, CheckCircle, AlertCircle } from "lucide-react";
 import { API_URL } from "../../config";
 
-// -------- GET Locations ----------
-async function fetchObjects() {
-  const token = localStorage.getItem("token");
+interface Location {
+  id: string;
+  name: string;
+  object_address: string;
+  created_at: string;
+}
 
+// -------- GET Locations ----------
+async function fetchObjects(): Promise<Location[]> {
+  const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/objects/`, {
     headers: {
       "Content-Type": "application/json",
@@ -47,7 +55,17 @@ async function fetchObjects() {
     throw new Error(`Failed to fetch objects: ${res.statusText}`);
   }
 
-  return await res.json();
+  const data = await res.json();
+  console.log("Raw /api/objects response:", data);
+  if (Array.isArray(data)) {
+    return data.map((loc: any) => ({
+      id: String(loc.object?.id ?? "unknown"),
+      name: loc.object?.name ?? "Unknown",
+      object_address: loc.object?.object_address ?? "Unknown",
+      created_at: loc.object?.created_at ?? new Date().toISOString(),
+    }));
+  }
+  return [];
 }
 
 // -------- POST Location ----------
@@ -56,18 +74,24 @@ async function postLocation(newLocation: {
   object_address: string;
 }) {
   const token = localStorage.getItem("token");
+  console.log("Sending POST /api/objects with:", newLocation);
   const res = await fetch(`${API_URL}/api/objects/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
     },
     body: JSON.stringify(newLocation),
   });
-  if (!res.ok) throw new Error("Ошибка при добавлении локации");
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Ошибка при добавлении локации: ${errorText}`);
+  }
   return res.json();
 }
 
+// -------- POST Item ----------
 async function postItem(newItem: {
   device_name: string;
   object_name: string;
@@ -75,61 +99,69 @@ async function postItem(newItem: {
   device_count: number;
 }) {
   const token = localStorage.getItem("token");
+  console.log("Sending POST /api/devices with:", newItem);
   const res = await fetch(`${API_URL}/api/devices/`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: token ? `Bearer ${token}` : "",
+      "ngrok-skip-browser-warning": "true",
     },
     body: JSON.stringify(newItem),
   });
-  if (!res.ok) throw new Error("Ошибка при добавлении товара");
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Ошибка при добавлении товара: ${errorText}`);
+  }
   return res.json();
 }
 
 export default function AddObjectsPage() {
   const [activeTab, setActiveTab] = useState("items");
-
-  // Forms state
   const [itemForm, setItemForm] = useState({
     device_name: "",
     object_name: "",
     description: "",
-    device_count: 0
+    device_count: 0,
   });
-
   const [locationForm, setLocationForm] = useState({
     object_name: "",
     object_address: "",
   });
-
   const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
 
   // GET objects
-  const {
-    data: locations,
-    isLoading,
-    isError,
-  } = useQuery({
+  const { data: locations = [], isLoading: isLoadingLocations } = useQuery({
     queryKey: ["objects"],
     queryFn: fetchObjects,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
   });
-  console.log(locations);
 
   // POST Location
   const { mutate: addLocation, isPending: isAddingLocation } = useMutation({
     mutationFn: postLocation,
-    onSuccess: () => {
+    onSuccess: (data) => {
       setSuccess("Локация успешно добавлена ✅");
       setError(null);
       setLocationForm({ object_name: "", object_address: "" });
+      // Optimistic update: Add the new location to the cache
+      queryClient.setQueryData(["objects"], (old: Location[] | undefined) => {
+        const newLocation: Location = {
+          id: String(data?.object?.id ?? "temp-" + Date.now()),
+          name: locationForm.object_name,
+          object_address: locationForm.object_address,
+          created_at: new Date().toISOString(),
+        };
+        return [...(old ?? []), newLocation];
+      });
+      // Invalidate to fetch the latest data
       queryClient.invalidateQueries({ queryKey: ["objects"] });
     },
-    onError: () => {
-      setError("Ошибка при добавлении локации ❌");
+    onError: (error: any) => {
+      setError(`Ошибка при добавлении локации: ${error.message} ❌`);
       setSuccess(null);
     },
   });
@@ -146,22 +178,30 @@ export default function AddObjectsPage() {
         description: "",
         device_count: 0,
       });
+      queryClient.invalidateQueries({ queryKey: ["objects"] }); // Refresh locations to include new item
     },
-    onError: () => {
-      setError("Ошибка при добавлении товара ❌");
+    onError: (error: any) => {
+      setError(`Ошибка при добавлении товара: ${error.message} ❌`);
       setSuccess(null);
     },
   });
 
   const handleSubmitLocation = (e: React.FormEvent) => {
     e.preventDefault();
-    addLocation(locationForm);
+    e.stopPropagation(); // Prevent event bubbling
+    if (!isAddingLocation) {
+      addLocation(locationForm);
+    }
   };
 
   const handleSubmitItem = (e: React.FormEvent) => {
     e.preventDefault();
-    addItem(itemForm);
+    e.stopPropagation(); // Prevent event bubbling
+    if (!isAddingItem) {
+      addItem(itemForm);
+    }
   };
+
   return (
     <AppLayout
       title="Добавить объекты и товары"
@@ -193,7 +233,6 @@ export default function AddObjectsPage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Items tab */}
           <TabsContent value="items">
             <Card>
               <CardHeader>
@@ -216,6 +255,7 @@ export default function AddObjectsPage() {
                           }))
                         }
                         required
+                        disabled={isAddingItem}
                       />
                     </div>
                     <div>
@@ -228,16 +268,23 @@ export default function AddObjectsPage() {
                             object_name: value,
                           }))
                         }
+                        disabled={isAddingItem || isLoadingLocations}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Выберите локацию" />
                         </SelectTrigger>
                         <SelectContent>
-                          {locations?.map((loc: any) => (
-                            <SelectItem key={loc.id} value={loc.name}>
-                              {loc.name}
+                          {locations.length > 0 ? (
+                            locations.map((loc) => (
+                              <SelectItem key={loc.id} value={loc.name}>
+                                {loc.name}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <SelectItem value="none" disabled>
+                              Нет доступных локаций
                             </SelectItem>
-                          ))}
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
@@ -249,7 +296,7 @@ export default function AddObjectsPage() {
                       <Input
                         type="number"
                         placeholder="0"
-                        value={itemForm.device_count}
+                        value={itemForm.device_count || ""}
                         onChange={(e) =>
                           setItemForm((prev) => ({
                             ...prev,
@@ -257,12 +304,12 @@ export default function AddObjectsPage() {
                           }))
                         }
                         required
+                        disabled={isAddingItem}
                       />
                     </div>
                     <div>
                       <Label className="mb-2">Описание *</Label>
                       <Textarea
-                        className=""
                         value={itemForm.description}
                         onChange={(e) =>
                           setItemForm((prev) => ({
@@ -271,11 +318,12 @@ export default function AddObjectsPage() {
                           }))
                         }
                         required
+                        disabled={isAddingItem}
                       />
                     </div>
                   </div>
 
-                  <Button type="submit" disabled={isAddingItem}>
+                  <Button type="submit" disabled={isAddingItem || isLoadingLocations}>
                     <Plus className="mr-2 h-4 w-4" />
                     {isAddingItem ? "Добавление..." : "Добавить товар"}
                   </Button>
@@ -284,7 +332,6 @@ export default function AddObjectsPage() {
             </Card>
           </TabsContent>
 
-          {/* Locations tab */}
           <TabsContent value="locations">
             <Card>
               <CardHeader>
@@ -306,6 +353,7 @@ export default function AddObjectsPage() {
                         }))
                       }
                       required
+                      disabled={isAddingLocation}
                     />
                   </div>
                   <div>
@@ -319,6 +367,7 @@ export default function AddObjectsPage() {
                         }))
                       }
                       required
+                      disabled={isAddingLocation}
                     />
                   </div>
 
