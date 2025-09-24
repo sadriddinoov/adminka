@@ -378,6 +378,7 @@ def http_get_object_by_name(object_name: str = Path(..., example="ГАИ №1"),
     return {"id": row[0], "name": row[1], "object_address": row[2],
             "created_at": row[3].isoformat() if row[3] else None}
 
+<<<<<<< HEAD
 @app.get("/api/objects", tags=["2. Objects"], summary="Список объектов (поиск и пагинация)")
 def http_list_objects(
     q: Optional[str] = Query(None, example="Таш"),
@@ -401,6 +402,93 @@ def http_list_objects(
         """, (limit, offset), fetch="all") or []
     return [{"id": r[0], "name": r[1], "object_address": r[2],
              "created_at": r[3].isoformat() if r[3] else None} for r in rows]
+=======
+@app.get("/api/objects", tags=["2. Objects"], summary="Список объектов (поиск, пагинация) + их устройства и суммы")
+def http_list_objects(
+    q: Optional[str] = Query(None, example=""),
+    limit: int = Query(50, ge=1, le=200, example=50),
+    offset: int = Query(0, ge=0, example=0),
+    user: str = Depends(require_bearer_token)
+):
+    """
+    Возвращает массив элементов в формате, идентичном /api/object/full:
+    [
+      {
+        "object": { id, name, object_address, created_at },
+        "devices_count": <кол-во строк devices для объекта>,
+        "device_count_total": <сумма device_count>,
+        "devices": [ {id, device_name, description, object_name, device_count, created_at}, ... ]
+      },
+      ...
+    ]
+    """
+    limit = max(1, min(limit, 200))
+    offset = max(0, offset)
+
+    # 1) выбираем объекты (с поиском/пагинацией)
+    if q:
+        patt = f"%{q}%"
+        obj_rows = db_exec("""
+            SELECT id, name, object_address, created_at
+            FROM traffic_objects
+            WHERE name ILIKE %s OR object_address ILIKE %s
+            ORDER BY name
+            LIMIT %s OFFSET %s
+        """, (patt, patt, limit, offset), fetch="all") or []
+    else:
+        obj_rows = db_exec("""
+            SELECT id, name, object_address, created_at
+            FROM traffic_objects
+            ORDER BY name
+            LIMIT %s OFFSET %s
+        """, (limit, offset), fetch="all") or []
+
+    if not obj_rows:
+        return []
+
+    # 2) одним запросом подтягиваем устройства для всех выбранных объектов
+    object_names = [r[1] for r in obj_rows]  # name
+    dev_rows = db_exec("""
+        SELECT id, device_name, description, object_name,
+               COALESCE(device_count, 0) AS device_count, created_at
+        FROM devices
+        WHERE object_name = ANY(%s)
+        ORDER BY object_name, id
+    """, (object_names,), fetch="all") or []
+
+    # 3) группируем девайсы по объекту
+    devices_by_object: dict[str, list[dict]] = {}
+    for r in dev_rows:
+        d = {
+            "id": r[0],
+            "device_name": r[1],
+            "description": r[2],
+            "object_name": r[3],
+            "device_count": int(r[4] or 0),
+            "created_at": r[5].isoformat() if r[5] else None
+        }
+        devices_by_object.setdefault(r[3], []).append(d)  # r[3] = object_name
+
+    # 4) собираем итог в формате /api/object/full
+    result = []
+    for r in obj_rows:
+        oid, oname, oaddr, ocreated = r[0], r[1], r[2], (r[3].isoformat() if r[3] else None)
+        devs = devices_by_object.get(oname, [])
+        item = {
+            "object": {
+                "id": oid,
+                "name": oname,
+                "object_address": oaddr,
+                "created_at": ocreated
+            },
+            "devices_count": len(devs),
+            "device_count_total": sum(d["device_count"] for d in devs),
+            "devices": devs
+        }
+        result.append(item)
+
+    return result
+>>>>>>> c6c12ee (first commit)
 
 
 @app.get(
