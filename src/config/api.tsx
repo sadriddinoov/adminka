@@ -16,6 +16,7 @@ export const initApp = () => {
   if (token) {
     $api.defaults.headers.common.Authorization = `Bearer ${token}`;
   }
+  console.log("token", token);
 };
 
 export const setToken = (token: string) => {
@@ -27,4 +28,11 @@ export const removeToken = () => {
   localStorage.removeItem(tokenName);
   delete $api.defaults.headers.common.Authorization;
 };
+// get locations
+// export const getObjects = async () => {
+//   const { data } = await $api.get(`/api/objects/`);
+//   console.log(data)
+//   return data;
+// };
 
+// getObjects()

@@ -47,13 +47,22 @@ async function fetchLocations() {
     method: "GET",
   });
 
-  if (!res.ok) throw new Error(`Failed to fetch locations: ${res.statusText}`);
+  if (!res.ok) {
+    console.error("Failed to fetch locations:", res.status, res.statusText);
+    throw new Error(`Failed to fetch locations: ${res.statusText}`);
+  }
   const data = await res.json();
+  console.log("Raw /api/objects response:", data);
   return Array.isArray(data)
-    ? data.map((loc: any) => ({
-        ...loc,
-        id: loc.id.toString(),
-      }))
+    ? data
+        .filter((loc: any) => loc && loc.id != null) // Filter out invalid entries
+        .map((loc: any) => ({
+          ...loc,
+          id: String(loc.id), // Convert to string safely
+          name: loc.name || "Unknown",
+          object_address: loc.object_address || "",
+          created_at: loc.created_at || new Date().toISOString(),
+        }))
     : [];
 }
 
@@ -69,18 +78,30 @@ async function fetchTransfers(page: number, limit: number = 10) {
     method: "GET",
   });
 
-  if (!res.ok) throw new Error(`Failed to fetch transfers: ${res.statusText}`);
+  if (!res.ok) {
+    console.error("Failed to fetch transfers:", res.status, res.statusText);
+    throw new Error(`Failed to fetch transfers: ${res.statusText}`);
+  }
   const data = await res.json();
+  console.log("Raw /api/transfer/history response:", data);
   if (data && Array.isArray(data.items)) {
     return {
-      items: data.items.map((transfer: any) => ({
-        ...transfer,
-        id: transfer.id.toString(),
-        devices: transfer.devices.map((device: string) => device.replace(/[{}]/g, "")),
-        status: "completed" as const, // Default since API doesn't provide
-        createdBy: "Unknown", // Default since API doesn't provide
-      })),
-      total: data.total || data.items.length, // Fallback to items length if total not provided
+      items: data.items
+        .filter((transfer: any) => transfer && transfer.id != null)
+        .map((transfer: any) => ({
+          ...transfer,
+          id: String(transfer.id),
+          devices: Array.isArray(transfer.devices)
+            ? transfer.devices.map((device: string) => device.replace(/[{}]/g, ""))
+            : [],
+          object_from: transfer.object_from || "Unknown",
+          object_to: transfer.object_to || "Unknown",
+          device_count: transfer.device_count || 0,
+          created_at: transfer.created_at || new Date().toISOString(),
+          status: "completed" as const,
+          createdBy: "Unknown",
+        })),
+      total: data.total != null ? data.total : data.items.length,
     };
   }
   return { items: [], total: 0 };
@@ -98,10 +119,13 @@ export function TransfersPage() {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setIsLoading(true);
         const [locationsData, transfersData] = await Promise.all([
           fetchLocations(),
           fetchTransfers(currentPage),
         ]);
+        console.log("Processed locations:", locationsData);
+        console.log("Processed transfers:", transfersData.items, "Total:", transfersData.total);
         setLocations(locationsData);
         setTransfers(transfersData.items);
         setTotalItems(transfersData.total);
@@ -117,9 +141,10 @@ export function TransfersPage() {
   }, [currentPage]);
 
   const handleTransferCreated = (newTransfer: Transfer) => {
-    setTransfers((prev) => [newTransfer, ...prev.slice(0, 9)]); // Keep only 10 items
+    setTransfers((prev) => [newTransfer, ...prev.slice(0, 9)]);
     setTotalItems((prev) => prev + 1);
     setIsFormOpen(false);
+    setCurrentPage(1); // Reset to first page to show new transfer
     fetchLocations()
       .then((data) => {
         setLocations(data);
@@ -156,8 +181,9 @@ export function TransfersPage() {
                 Создать трансфер
               </Button>
             </DialogTrigger>
-            <DialogContent className="min-w-[600px] max-h-[95%]">
+            <DialogContent className="min-w-[600px] max-h-[95vh] overflow-y-auto">
               <DialogHeader>
+                <DialogTitle>Создать новый трансфер</DialogTitle>
               </DialogHeader>
               <TransferForm
                 onTransferCreated={handleTransferCreated}

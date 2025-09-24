@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
@@ -8,6 +10,7 @@ import {
   Menu,
   X,
   Plus,
+  Loader2,
 } from "lucide-react";
 import { useAuth } from "../../hooks/use-auth";
 import { API_URL } from "../../config";
@@ -26,7 +29,6 @@ interface MEApiResponse {
 
 async function fetchMe() {
   const token = localStorage.getItem("token");
-
   const res = await fetch(`${API_URL}/api/user`, {
     headers: {
       "Content-Type": "application/json",
@@ -37,7 +39,7 @@ async function fetchMe() {
     method: "GET",
   });
 
-  if (!res.ok) throw new Error(`Failed to fetch stats: ${res.statusText}`);
+  if (!res.ok) throw new Error(`Failed to fetch user: ${res.statusText}`);
   return res.json();
 }
 
@@ -46,15 +48,14 @@ export function Sidebar() {
   const location = useLocation();
   const { logout } = useAuth();
 
-  const { data } = useQuery<MEApiResponse>({
-    queryKey: ["stats"],
-    queryFn: fetchMe
+  const { data, isLoading, error } = useQuery<MEApiResponse>({
+    queryKey: ["user"],
+    queryFn: fetchMe,
   });
-
-  console.log(data)
 
   const handleLogout = () => {
     logout();
+    setIsOpen(false);
   };
 
   return (
@@ -110,19 +111,39 @@ export function Sidebar() {
 
           {/* User section */}
           <div className="px-4 py-4 border-t border-border">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium">
-                  {data?.name?.charAt(0) || "А"}
-                </span>
+            {isLoading ? (
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Загрузка...</p>
+                  <p className="text-xs text-muted-foreground">Загрузка...</p>
+                </div>
               </div>
-              <div>
-                <p className="text-sm font-medium">{data?.name}</p>
-                <p className="text-xs text-muted-foreground">
-                  {data?.username}
-                </p>
+            ) : error ? (
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium">?</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Ошибка</p>
+                  <p className="text-xs text-muted-foreground">Не удалось загрузить данные</p>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-8 h-8 bg-secondary rounded-full flex items-center justify-center">
+                  <span className="text-sm font-medium">
+                    {data?.name?.charAt(0) || "А"}
+                  </span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{data?.name || "Пользователь"}</p>
+                  <p className="text-xs text-muted-foreground">{data?.username || "Неизвестно"}</p>
+                </div>
+              </div>
+            )}
             <button
               className="flex w-full items-center px-2 py-1 text-sm text-muted-foreground hover:text-foreground"
               onClick={handleLogout}
