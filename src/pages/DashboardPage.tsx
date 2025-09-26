@@ -14,7 +14,7 @@ interface Location {
   name: string;
   address: string;
   created_at: string;
-  items: { id: string; name: string; quantity: number; unit: string }[];
+  items: { id: string; name: string; quantity: number; unit: string, inventory_number: string, full_name:string }[];
 }
 
 interface TransferItem {
@@ -44,13 +44,14 @@ async function fetchLocations(): Promise<Location[]> {
     method: "GET",
   });
 
+
   if (!res.ok) {
     console.error("Failed to fetch locations:", res.status, res.statusText);
     throw new Error(`Failed to fetch locations: ${res.statusText}`);
   }
 
   const data = await res.json();
-  console.log("Raw /api/objects response:", data);
+
   if (Array.isArray(data)) {
     return data.map((loc: any) => ({
       id: String(loc.object.id),
@@ -63,6 +64,8 @@ async function fetchLocations(): Promise<Location[]> {
             name: device.device_name || "Unknown",
             quantity: device.device_count || 0,
             unit: "шт.",
+            full_name: device.full_name || "Unknown",
+            inventory_number: device.inventory_number || "N/A",
           }))
         : [],
     }));
@@ -87,7 +90,6 @@ async function fetchTransfers(limit: number = 5) {
     throw new Error(`Failed to fetch transfers: ${res.statusText}`);
   }
   const data = await res.json();
-  console.log("Raw /api/transfer/history response:", data);
   if (data && Array.isArray(data.items)) {
     return {
       items: data.items
@@ -122,6 +124,7 @@ export function DashboardPage() {
           fetchLocations(),
           fetchTransfers(),
         ]);
+        console.log("Fetched locations:", locationsData);
         setLocations(locationsData);
         setTransfers(transfersData.items);
       } catch (error) {
@@ -133,6 +136,8 @@ export function DashboardPage() {
 
     loadData();
   }, []);
+
+  console.log("Locations:", locations);
 
   if (isLoading) {
     return (
