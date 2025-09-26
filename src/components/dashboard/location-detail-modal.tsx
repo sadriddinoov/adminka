@@ -87,6 +87,12 @@ export function LocationDetailModal({
                     <div className="text-sm text-muted-foreground">
                       ID: {item.id}
                     </div>
+                    <div className="text-sm text-muted-foreground">
+                      Инвер.номер: {item.inventory_number}
+                    </div>
+                     <div className="text-sm text-muted-foreground">
+                      Чей: {item.full_name}
+                    </div>
                   </div>
                   <div className="text-right">
                     <div

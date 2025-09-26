@@ -56,7 +56,6 @@ async function fetchObjects(): Promise<Location[]> {
   }
 
   const data = await res.json();
-  console.log("Raw /api/objects response:", data);
   if (Array.isArray(data)) {
     return data.map((loc: any) => ({
       id: String(loc.object?.id ?? "unknown"),
@@ -74,7 +73,6 @@ async function postLocation(newLocation: {
   object_address: string;
 }) {
   const token = localStorage.getItem("token");
-  console.log("Sending POST /api/objects with:", newLocation);
   const res = await fetch(`${API_URL}/api/objects/`, {
     method: "POST",
     headers: {
@@ -97,9 +95,10 @@ async function postItem(newItem: {
   object_name: string;
   description: string;
   device_count: number;
+  inventory_number: string;
+  full_name: string;
 }) {
   const token = localStorage.getItem("token");
-  console.log("Sending POST /api/devices with:", newItem);
   const res = await fetch(`${API_URL}/api/devices/`, {
     method: "POST",
     headers: {
@@ -123,6 +122,8 @@ export default function AddObjectsPage() {
     object_name: "",
     description: "",
     device_count: 0,
+    inventory_number: "",
+    full_name: "",
   });
   const [locationForm, setLocationForm] = useState({
     object_name: "",
@@ -177,6 +178,8 @@ export default function AddObjectsPage() {
         object_name: "",
         description: "",
         device_count: 0,
+        inventory_number: "",
+        full_name: "",
       });
       queryClient.invalidateQueries({ queryKey: ["objects"] }); // Refresh locations to include new item
     },
@@ -287,6 +290,37 @@ export default function AddObjectsPage() {
                           )}
                         </SelectContent>
                       </Select>
+                    </div>
+                  </div>
+
+                   <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <Label className="mb-2">Инвент.номер *</Label>
+                      <Input
+                        value={itemForm.inventory_number || ""}
+                        onChange={(e) =>
+                          setItemForm((prev) => ({
+                            ...prev,
+                            inventory_number: e.target.value,
+                          }))
+                        }
+                        required
+                        disabled={isAddingItem}
+                      />
+                    </div>
+                    <div>
+                      <Label className="mb-2">Чей *</Label>
+                      <Input
+                        value={itemForm.full_name}
+                        onChange={(e) =>
+                          setItemForm((prev) => ({
+                            ...prev,
+                            full_name: e.target.value,
+                          }))
+                        }
+                        required
+                        disabled={isAddingItem}
+                      />
                     </div>
                   </div>
 
