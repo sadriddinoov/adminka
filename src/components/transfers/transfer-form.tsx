@@ -30,6 +30,7 @@ interface Item {
 interface TransferItem {
   itemId: string;
   quantity: number;
+  full_name: string;
 }
 
 async function fetchLocations() {
@@ -85,7 +86,7 @@ async function fetchDevices(objectName: string) {
     : [];
 }
 
-async function createTransfer(device_name: string, from_object_name: string, to_object_name: string, device_count: number) {
+async function createTransfer(device_name: string, from_object_name: string, to_object_name: string, device_count: number, full_name: string) {
   const token = localStorage.getItem("token");
   const res = await fetch(`${API_URL}/api/transfer`, {
     headers: {
@@ -100,6 +101,7 @@ async function createTransfer(device_name: string, from_object_name: string, to_
       from_object_name,
       to_object_name,
       device_count,
+      full_name,
     }),
   });
 
@@ -158,7 +160,7 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
   }, [fromLocation, locations]);
 
   const addTransferItem = () => {
-    setTransferItems([...transferItems, { itemId: "", quantity: 1 }]);
+    setTransferItems([...transferItems, { itemId: "", quantity: 1, full_name: "" }]);
   };
 
   const removeTransferItem = (index: number) => {
@@ -195,6 +197,9 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
     for (const item of transferItems) {
       if (!item.itemId) {
         return "Выберите товар для всех позиций";
+      }
+      if (!item.full_name) {
+        return "Укажите поле 'Чей' для всех товаров";
       }
       if (item.quantity <= 0) {
         return "Количество должно быть больше нуля";
@@ -234,7 +239,7 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
           throw new Error(`Не удалось определить название устройства для ID ${item.itemId}`);
         }
 
-        await createTransfer(deviceName, fromLocationName, toLocationName, item.quantity);
+        await createTransfer(deviceName, fromLocationName, toLocationName, item.quantity, item.full_name);
       }
 
       toast.success("Трансфер успешно выполнен!");
@@ -243,6 +248,7 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
       setToLocation("");
       setTransferItems([]);
       setAvailableItems([]);
+      onTransferComplete?.();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Ошибка выполнения трансфера";
       setError(errorMessage);
@@ -332,13 +338,13 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
           </div>
 
           {transferItems.length === 0 && fromLocation && (
-            <div className="text-center py-8 text-muted-foreground">
-              <Plus className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <div className="text-center py-2 text-muted-foreground">
+              <Plus className="h-6 w-6 mx-auto mb-2 opacity-50" />
               <p>Добавьте товары для трансфера</p>
             </div>
           )}
 
-          <div className="max-h-64 overflow-y-auto">
+          <div className="max-h-48 overflow-y-auto">
             {transferItems.map((item, index) => {
               const selectedItem = availableItems.find((ai) => ai.id === item.itemId);
               const isQuantityValid = item.quantity > 0 && item.quantity <= (selectedItem?.quantity || 0);
@@ -358,7 +364,7 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
                     </Button>
                   </div>
 
-                  <div className="grid gap-3 md:grid-cols-2">
+                  <div className="grid gap-3 md:grid-cols-3">
                     <div className="space-y-2">
                       <Label>Товар</Label>
                       <Select value={item.itemId} onValueChange={(value) => updateTransferItem(index, "itemId", value)}>
@@ -378,6 +384,16 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Чей</Label>
+                      <Input
+                        value={item.full_name}
+                        onChange={(e) => updateTransferItem(index, "full_name", e.target.value)}
+                        placeholder="Введите имя"
+                        className={item.full_name === "" ? "border-destructive" : ""}
+                      />
                     </div>
 
                     <div className="space-y-2">
@@ -411,6 +427,14 @@ export function TransferForm({ onTransferComplete }: TransferFormProps) {
                       <AlertTriangle className="h-4 w-4" />
                       <AlertDescription>
                         Недостаточно товара. Доступно: {selectedItem.quantity} {selectedItem.unit}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  {item.full_name === "" && (
+                    <Alert variant="destructive">
+                      <AlertTriangle className="h-4 w-4" />
+                      <AlertDescription>
+                        Поле "Чей" обязательно для заполнения
                       </AlertDescription>
                     </Alert>
                   )}

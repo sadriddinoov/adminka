@@ -81,9 +81,9 @@ export function RecentTransfers({ transfers, locations }: RecentTransfersProps) 
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-2 mb-1">
-                  <span className="text-[12px] font-medium">{getLocationName(transfer.fromLocation)}</span>
+                  <Badge className="text-[12px]">{getLocationName(transfer.fromLocation)}</Badge>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-[12px] font-medium">{getLocationName(transfer.toLocation)}</span>
+                  <Badge className="text-[12px]">{getLocationName(transfer.toLocation)}</Badge>
                 </div>
 
                 <div className="flex items-center space-x-2 mb-2">
