@@ -179,7 +179,7 @@ export function TransfersPage() {
                 Создать трансфер
               </Button>
             </DialogTrigger>
-            <DialogContent className="min-w-[600px] max-h-[95vh] overflow-y-auto">
+            <DialogContent className="min-w-[700px] max-h-[95vh] overflow-y-auto">
               <TransferForm
                 onTransferCreated={handleTransferCreated}
                 onCancel={() => setIsFormOpen(false)}

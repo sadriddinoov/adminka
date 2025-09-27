@@ -21,7 +21,6 @@ export function LocationsGrid({ locations, onViewLocation }: LocationsGridProps)
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {locations.map((location) => {
         const totalQuantity = location.items.reduce((sum, item) => sum + item.quantity, 0);
-        const lowStockItems = location.items.filter((item) => item.quantity < 5).length;
 
         return (
           <Card key={location.id} className="hover:shadow-md transition-shadow">
@@ -47,12 +46,6 @@ export function LocationsGrid({ locations, onViewLocation }: LocationsGridProps)
                   <span className="text-sm text-muted-foreground">Общее количество:</span>
                   <Badge variant="outline">{totalQuantity}</Badge>
                 </div>
-                {lowStockItems > 0 && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Низкий остаток:</span>
-                    <Badge variant="destructive">{lowStockItems}</Badge>
-                  </div>
-                )}
               </div>
 
               <div className="mt-4">
@@ -64,7 +57,7 @@ export function LocationsGrid({ locations, onViewLocation }: LocationsGridProps)
                   {location.items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{item.name}</span>
-                      <span className={item.quantity < 5 ? "text-destructive font-medium" : ""}>
+                      <span className={"font-medium"}>
                         {item.quantity} {item.unit}
                       </span>
                     </div>
